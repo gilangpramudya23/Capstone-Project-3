@@ -100,6 +100,7 @@ def compare_movies(movie_titles: str) -> str:
         )
     return "\n---\n".join(comparisons) if comparisons else "No movies found to compare."
 
+tools = [get_relevant_docs, search_movies, get_recommendations, ompare_movies]
 # MAIN FUNCTION
 
 def process_question(question, history):
@@ -158,7 +159,6 @@ def process_question(question, history):
         result = chat_chef(question, history, tools, prompt)
         return result
     
-tools = [search_movies_tool, recommend_movies_tool, compare_movies_tool]
 # SPECIALIST AGENTS
 
 # Search Agent
@@ -347,6 +347,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
