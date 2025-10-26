@@ -335,6 +335,14 @@ with st.sidebar:
     if st.button("Find movies directed by David Fincher"):
         st.session_state.next_query = "Find movies directed by David Fincher"
         st.rerun()
+
+    if st.button("List 3 action movies"):
+        st.session_state.next_query = "List 3 action movies"
+        st.rerun()
+
+    if st.button("Find three movies released between 2010 and 2012"):
+        st.session_state.next_query = "Find three movies released between 2010 and 2012"
+        st.rerun()
     
     st.subheader("🎯 Recommendations")
     if st.button("Recommend movies like Inception"):
@@ -375,6 +383,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
