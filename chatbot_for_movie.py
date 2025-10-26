@@ -7,9 +7,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph_supervisor import create_supervisor
 from langchain_core.messages import ToolMessage
 
-# ===========================
 # CONFIGURATION
-# ===========================
 
 QDRANT_URL = st.secrets["QDRANT_URL"]
 QDRANT_API_KEY = st.secrets["QDRANT_API_KEY"]
@@ -370,4 +368,5 @@ if "next_query" in st.session_state:
         "content": response["answer"],
         "agent_info": agent_info
     })
+
     st.rerun()
