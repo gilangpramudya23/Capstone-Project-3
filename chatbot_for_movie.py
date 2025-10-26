@@ -76,16 +76,19 @@ def recommend_movies_tool(question):
 def statistics_tool(question):
     """Use this tool to get top rated movies, best movies by genre, or year analysis.
     Return a ranked list or a brief analysis summary based on the query."""
-    results = qdrant.similarity_search(question, k=10)
-    
+    results = qdrant.similarity_search(question, k=50)
+
+    # Fallback: if no results, get a broader set
+    if not results:
+        results = qdrant.similarity_search("movie", k=100)
+
     # Sort by rating
     sorted_results = sorted(
         results,
         key=lambda x: float(x.metadata.get('rating', 0) or 0),
         reverse=True
     )
-    
-    # Format top movies
+
     stats = []
     for i, doc in enumerate(sorted_results[:10], 1):
         metadata = doc.metadata
@@ -386,4 +389,5 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
