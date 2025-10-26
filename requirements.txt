@@ -1,0 +1,17 @@
+streamlit
+openai
+mathlib
+st-theme
+google-genai
+pillow
+langchain-google-genai
+langchain
+langchain-community
+XlsxWriter
+langchain-openai
+langchain-qdrant
+langgraph
+openai
+qdrant-client
+python-dotenv
+datetime
