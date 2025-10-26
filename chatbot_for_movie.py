@@ -41,125 +41,212 @@ def get_relevant_docs(question):
 
 @tool
 def search_movies(query: str) -> str:
-    """Use this tool to find the most relevant movies based on a user's query.
-    You can search by Movie title, Actor, and Director.
-    Return movies that best match the user's intent, even if the query is phrased naturally."""
-    results = qdrant.similarity_search(question, k=10)
-    
-    # Format the results into readable text
+    """Search for movies by title, actor, director, or keywords."""
+    results = qdrant.similarity_search(query, k=5)
     formatted = []
-    for i, doc in enumerate(results, 1):
+    for doc in results:
         metadata = doc.metadata
         formatted.append(
-            f"{i}. **{metadata.get('title', 'N/A')}** ({metadata.get('released_year', 'N/A')})\n"
-            f"   - Rating: {metadata.get('rating', 'N/A')}/10\n"
-            f"   - Genre: {metadata.get('genre', 'N/A')}\n"
-            f"   - Director: {metadata.get('director', 'N/A')}\n"
-            f"   - Stars: {metadata.get('star1', 'N/A')}, {metadata.get('star2', 'N/A')}\n"
-            f"   - Overview: {metadata.get('overview', 'N/A')[:200]}...\n"
+            f"**{metadata.get('Series_Title', 'N/A')}** ({metadata.get('Released_Year', 'N/A')})\n"
+            f"Rating: {metadata.get('IMDB_Rating', 'N/A')}/10 | Genre: {metadata.get('Genre', 'N/A')}\n"
+            f"Director: {metadata.get('Director', 'N/A')}\n"
+            f"Stars: {metadata.get('Star1', 'N/A')}, {metadata.get('Star2', 'N/A')}\n"
         )
-    return "\n".join(formatted) if formatted else "No movies found."
+    return "\n---\n".join(formatted)
 
 @tool
 def get_recommendations(movie_title: str) -> str:
-    """Use this tool to get movie recommendations based on a movie the user likes.
-    The input can be a movie title or a short description of the type of movie they liked."""
-    results = qdrant.similarity_search(question, k=10)
-    
-    # Format recommendations
+    """Get movie recommendations similar to the given movie title."""
+    results = qdrant.similarity_search(movie_title, k=6)
     recommendations = []
     for i, doc in enumerate(results[1:], 1):
         metadata = doc.metadata
         recommendations.append(
-            f"{i}. **{metadata.get('title', 'N/A')}** ({metadata.get('released_year', 'N/A')})\n"
-            f"   - Rating: {metadata.get('rating', 'N/A')}/10\n"
-            f"   - Genre: {metadata.get('genre', 'N/A')}\n"
-            f"   - Why: Similar themes, style, and tone\n"
+            f"{i}. {metadata.get('Series_Title', 'N/A')} ({metadata.get('Released_Year', 'N/A')}) - "
+            f"Rating: {metadata.get('IMDB_Rating', 'N/A')}/10"
         )
-    return "\n".join(recommendations) if recommendations else "No recommendations found."
+    return "\n".join(recommendations)
+
+@tool
+def statistics_tool(IMDB_Rating: str) -> str:
+    """Use this tool to get top-rated movies, best movies by genre, or year analysis.
+    It detects genre and rating conditions automatically and returns ranked results."""
+    
+    question_lower = question.lower()
+    genre_detected = None
+    genres = [
+        "action", "drama", "comedy", "thriller", "romance",
+        "horror", "sci-fi", "adventure", "animation", "crime"
+    ]
+    for g in genres:
+        if g in question_lower:
+            genre_detected = g.title()
+            break
+
+    # Run the base similarity search with a wider range
+    results = qdrant.similarity_search(question, k=10)
+    if not results:
+        return "No movies found for your query."
+
+    # Filter by detected genre
+    if genre_detected:
+        results = [r for r in results if genre_detected in str(r.metadata.get("genre", ""))]
+
+    # Sort results by rating
+    sorted_results = sorted(
+        results,
+        key=lambda x: float(x.metadata.get("rating", 0) or 0),
+        reverse=True
+    )
+
+    # Take the top 10
+    top_movies = sorted_results[:10]
+
+    if not top_movies:
+        return f"No {genre_detected or ''} movies found with sufficient rating."
+
+    # Format the output neatly
+    formatted = []
+    for i, doc in enumerate(top_movies, 1):
+        m = doc.metadata
+        formatted.append(
+            f"{i}. **{m.get('title', 'N/A')}** ({m.get('released_year', 'N/A')})\n"
+            f"   - Rating: {m.get('rating', 'N/A')}/10\n"
+            f"   - Genre: {m.get('genre', 'N/A')}\n"
+            f"   - Director: {m.get('director', 'N/A')}\n"
+            f"   - Stars: {m.get('star1', 'N/A')}, {m.get('star2', 'N/A')}\n"
+        )
+
+    return (
+        f"🎬 **Top 10 Rated {genre_detected or 'Movies'}:**\n\n"
+        + "\n".join(formatted)
+    )
 
 @tool
 def compare_movies(movie_titles: str) -> str:
-    """Use this tool to compare multiple movies side by side.
-    Focus on similarities and differences.
-    Return a concise comparison summary or table-style result if needed."""
-    results = qdrant.similarity_search(question, k=10)
-    
-    # Format comparisons
+    """Compare multiple movies. Input should be comma-separated titles."""
+    titles = [t.strip() for t in movie_titles.split(',')]
     comparisons = []
-    for doc in results[:5]:  # Limit to 5 movies for comparison
-        metadata = doc.metadata
-        comparisons.append(
-            f"**{metadata.get('title', 'N/A')}**\n"
-            f"  - Year: {metadata.get('released_year', 'N/A')}\n"
-            f"  - Rating: {metadata.get('rating', 'N/A')}/10\n"
-            f"  - Genre: {metadata.get('genre', 'N/A')}\n"
-            f"  - Director: {metadata.get('director', 'N/A')}\n"
-            f"  - Runtime: {metadata.get('duration', 'N/A')}\n"
-            f"  - Gross: ${metadata.get('gross', 'N/A')}\n"
-        )
-    return "\n---\n".join(comparisons) if comparisons else "No movies found to compare."
+    for title in titles:
+        results = qdrant.similarity_search(title, k=1)
+        if results:
+            doc = results[0]
+            metadata = doc.metadata
+            comparisons.append(
+                f"{metadata.get('Series_Title', 'N/A')}: "
+                f"Rating {metadata.get('IMDB_Rating', 'N/A')}, "
+                f"Year {metadata.get('Released_Year', 'N/A')}, "
+                f"Genre {metadata.get('Genre', 'N/A')}"
+            )
+    return "\n".join(comparisons)
 
-tools = [get_relevant_docs, search_movies, get_recommendations, compare_movies]
+# chat_movie FUNCTION
+
+def chat_movie(question, history, tools_list, agent_prompt):
+    agent = create_react_agent(
+        model=llm,
+        tools=tools_list,
+        prompt=agent_prompt
+    )
+
+    messages = []
+    # Add conversation history
+    for msg in history:
+        if msg["role"] == "Human":
+            messages.append({"role": "user", "content": msg["content"]})
+        elif msg["role"] == "AI":
+            messages.append({"role": "assistant", "content": msg["content"]})
     
-# SPECIALIST AGENTS
+    messages.append({"role": "user", "content": question})
+
+    result = agent.invoke(
+        {"messages": messages}
+    )
+    answer = result["messages"][-1].content
+
+    total_input_tokens = 0
+    total_output_tokens = 0
+
+    for message in result["messages"]:
+        if "usage_metadata" in message.response_metadata:
+            total_input_tokens += message.response_metadata["usage_metadata"]["input_tokens"]
+            total_output_tokens += message.response_metadata["usage_metadata"]["output_tokens"]
+        elif "token_usage" in message.response_metadata:
+            # Fallback for older or different structures
+            total_input_tokens += message.response_metadata["token_usage"].get("prompt_tokens", 0)
+            total_output_tokens += message.response_metadata["token_usage"].get("completion_tokens", 0)
+
+    price = 17_000*(total_input_tokens*0.15 + total_output_tokens*0.6)/1_000_000
+
+    tool_messages = []
+    for message in result["messages"]:
+        if isinstance(message, ToolMessage):
+            tool_message_content = message.content
+            tool_messages.append(tool_message_content)
+
+    response = {
+        "answer": answer,
+        "price": price,
+        "total_input_tokens": total_input_tokens,
+        "total_output_tokens": total_output_tokens,
+        "tool_messages": tool_messages
+    }
+    return response
+
+# SPECIALIST AGENTS (From chat_movie function!)
 
 # Search Agent
 search_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie search specialist." \
-    "Your goal is to help users find the most relevant movies based on their questions." \
-    "Use the 'search_movies_tool' to search by title, actor, director, or descriptive keywords." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    tools=[search_movies, get_relevant_docs],
+    prompt="You are a movie search specialist. Find movies by title, actor, director, or keywords. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="search_agent"
 )
 
 # Recommendation Agent
 recommendation_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie recommendation specialist." \
-    "Suggest movies similar to the one the user liked by analyzing genre, tone, themes, director style, or audience appeal. " \
-    "Use the 'recommend_movies_tool' to find up to 10 relevant movies and present them in a clear, ranked list with brief descriptions." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    tools=[get_recommendations],
+    prompt="You are a movie recommendation specialist. Suggest similar movies and explain why. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="recommendation_agent"
 )
 
-# Comparison Agent
+# Statistics Agent
+statistics_agent = create_react_agent(
+    model="openai:gpt-4o-mini",
+    tools=[statistics_tool],
+    prompt="You are a movie statistics specialist. Provide top-rated movies and analyze trends.",
+    name="statistics_agent"
+)
+
+# Comparison Agent - uses your chat_chef function
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie comparison specialist. Compare multiple movies and highlight similarities and differences." \
-    "Use the 'compare_movies_tool' to analyze and compare two or more movies." \
-    "Present your findings in a structured summary or bullet list for easy understanding." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    tools=[compare_movies],
+    prompt="You are a movie comparison specialist. Compare movies side-by-side. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="comparison_agent"
 )
 
-# SUPERVISOR AGENT
+# SUPERVISOR
 
-
-
-# MAIN FUNCTION
+# Initialize supervisor
+USE_SUPERVISOR = st.sidebar.checkbox("🤖 Enable Supervisor Mode", value=True)
 
 if USE_SUPERVISOR:
     supervisor = create_supervisor(
-    agents=[search_agent, recommendation_agent, comparison_agent],
-    model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
-    prompt="""You are the Supervisor Agent that manages four movie specialists.
-    Your goal is to correctly identify the user’s intent and route the query to the most suitable specialist agent.
-    Available agents:
-    - search_agent → Finds movies by title, actor, director, or keywords.
-    - recommendation_agent → Suggests similar movies based on user preferences or liked titles.
-    - comparison_agent → Compares two or more movies side by side.
-    
-    Route each question to the best specialist.
-    Your audiences are movie enthusiasts seeking accurate and relevant information."""
-).compile()
+        agents=[search_agent, recommendation_agent, statistics_agent, comparison_agent],
+        model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
+        prompt="""You manage four movie specialists:
+        - search_agent: Finds movies by title/actor/director
+        - recommendation_agent: Recommends similar movies
+        - comparison_agent: Compares multiple movies
+        
+        Route queries to the most appropriate specialist."""
+    ).compile()
+
+# WRAPPER FUNCTION
 
 def process_question(question, history):
-    """Wrapper that uses supervisor if enabled, otherwise uses original chat_chef"""
     
     if USE_SUPERVISOR:
         # Use supervisor mode
@@ -207,29 +294,22 @@ def process_question(question, history):
         }
     
     else:
-        # Use original chat_chef function (single agent mode)
         tools = [get_relevant_docs]
-        prompt = "You are a master of any movies. Answer only questions about movies and use given tools for movie details."
+        prompt = "You are a movie domain expert with deep knowledge of films, directors, actors, genres, and industry trends. Respond to questions related to movies. "
         
-        result = chat_chef(question, history, tools, prompt)
+        result = chat_movie(question, history, tools, prompt)
+        result["agents_used"] = ["single_agent"]
         return result
 
 # STREAMLIT APP
 
 st.title("🎬 Looking for Something to Watch?")
-st.caption("Grab your snacks! I’ll help you find the perfect pick.")
 
-import datetime
-
-hour = datetime.datetime.now().hour
-if hour < 12:
-    greeting = "Good morning"
-elif hour < 18:
-    greeting = "Good afternoon"
+# Mode indicator
+if USE_SUPERVISOR:
+    st.caption("🤖 Running in **Supervisor Mode** with 4 specialist agents")
 else:
-    greeting = "Good evening"
-
-st.subheader(f"{greeting}! Got a movie in mind or need some inspiration?")
+    st.caption("Grab your snacks, I’ll help you find the perfect pick!")
 
 # Display header image if exists
 try:
@@ -241,42 +321,53 @@ except:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages
+# Display chat messages from history
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
         if "agent_info" in message and message["agent_info"]:
             st.caption(message["agent_info"])
 
-# Chat input
-if prompt := st.chat_input("Ask me about movies!"):
+# Accept user input
+if prompt := st.chat_input("Ask me movies question"):
     messages_history = st.session_state.get("messages", [])[-20:]
     
+    # Display user message
     with st.chat_message("Human"):
         st.markdown(prompt)
     st.session_state.messages.append({"role": "Human", "content": prompt})
     
+    # Display assistant response
     with st.chat_message("AI"):
-        with st.spinner("Processing with specialist agents..."):
+        with st.spinner("Processing..."):
             response = process_question(prompt, messages_history)
             answer = response["answer"]
-            agents_used = response.get('agents_used', [])
             
             st.markdown(answer)
             
-            # Show which agents handled the query
-            agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
-            st.caption(agent_info)
-            
-            st.session_state.messages.append({
-                "role": "AI",
-                "content": answer,
-                "agent_info": agent_info
-            })
+            # Show agent info
+            if USE_SUPERVISOR and "agents_used" in response:
+                agent_info = f"🤖 Handled by: **{', '.join(response['agents_used'])}**"
+                st.caption(agent_info)
+                st.session_state.messages.append({
+                    "role": "AI",
+                    "content": answer,
+                    "agent_info": agent_info
+                })
+            else:
+                st.session_state.messages.append({"role": "AI", "content": answer})
     
-    # Expandable details
+    # Show details in expanders
     with st.expander("**Tool Calls:**"):
-        st.code(response["tool_messages"])
+        if response["tool_messages"]:
+            for i, msg in enumerate(response["tool_messages"], 1):
+                # Format the tool message nicely
+                if isinstance(msg, str):
+                    st.code(msg, language="python")
+                else:
+                    st.code(str(msg), language="python")
+        else:
+            st.info("No tools were called")
     
     with st.expander("**History Chat:**"):
         history_display = "\n".join([f'{msg["role"]}: {msg["content"]}' for msg in messages_history])
@@ -289,48 +380,35 @@ if prompt := st.chat_input("Ask me about movies!"):
             f'Price: Rp {response["price"]:.4f}'
         )
 
-# Sidebar examples
+# Sidebar
 with st.sidebar:
     st.header("💡 Example Queries")
-
-    def send_query_to_chat(query_text):
-        messages_history = st.session_state.get("messages", [])[-20:]
-        st.session_state.messages.append({"role": "Human", "content": query_text})
-
-        response = process_question(query_text, messages_history)
-        agents_used = response.get('agents_used', [])
-        agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
-
-        st.session_state.messages.append({
-            "role": "AI",
-            "content": response["answer"],
-            "agent_info": agent_info
-        })
-
-        st.rerun()
     
     st.subheader("🔍 Search")
-    if st.button("Reccommend me 10 best action movies", use_container_width=True):
-        st.session_state.next_query = "Reccommend me 10 best action movies"
+    if st.button("Find Nolan films"):
+        st.session_state.next_query = "Find movies directed by Christopher Nolan"
         st.rerun()
     
     st.subheader("🎯 Recommendations")
-    if st.button("Movies like Inception", use_container_width=True):
+    if st.button("Movies like Inception"):
         st.session_state.next_query = "Recommend movies like Inception"
         st.rerun()
     
-    st.divider()
+    st.subheader("📊 Rated Movie")
+    if st.button("Top 10 rated action movies"):
+        st.session_state.next_query = "Top 10 rated action movies"
+        st.rerun()
     
-    if st.button("🗑️ Clear Chat", use_container_width=True):
-        st.session_state.messages = []
+    st.subheader("⚖️ Compare")
+    if st.button("Compare Godfather 1 & 2"):
+        st.session_state.next_query = "Compare The Godfather and The Godfather Part II"
         st.rerun()
     
     st.divider()
-    st.caption("**🤖 Specialist Agents:**")
-    st.caption("• Search Agent")
-    st.caption("• Recommendation Agent")
-    st.caption("• Statistics Agent")
-    st.caption("• Comparison Agent")
+    
+    if st.button("🗑️ Clear Chat"):
+        st.session_state.messages = []
+        st.rerun()
 
 # Handle example queries
 if "next_query" in st.session_state:
@@ -341,23 +419,13 @@ if "next_query" in st.session_state:
     st.session_state.messages.append({"role": "Human", "content": query})
     
     response = process_question(query, messages_history)
-    agents_used = response.get('agents_used', [])
-    agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
+    agent_info = ""
+    if USE_SUPERVISOR and "agents_used" in response:
+        agent_info = f"🤖 Handled by: **{', '.join(response['agents_used'])}**"
     
     st.session_state.messages.append({
         "role": "AI",
         "content": response["answer"],
         "agent_info": agent_info
     })
-
     st.rerun()
-
-
-
-
-
-
-
-
-
-
