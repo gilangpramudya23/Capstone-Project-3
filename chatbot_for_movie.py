@@ -167,7 +167,7 @@ comparison_agent = create_react_agent(
 # SUPERVISOR
 
 # Initialize supervisor
-
+USE_SUPERVISOR = st.sidebar.checkbox("🤖 Enable Supervisor Mode", value=True)
 if USE_SUPERVISOR:
     supervisor = create_supervisor(
         agents=[search_agent, recommendation_agent, comparison_agent],
@@ -238,8 +238,6 @@ def process_question(question, history):
         return result
 
 # STREAMLIT APP
-
-USE_SUPERVISOR = st.sidebar.checkbox("🤖 Enable Supervisor Mode", value=True)
 
 st.title("🎬 Looking for Something to Watch?")
 
@@ -377,5 +375,6 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
