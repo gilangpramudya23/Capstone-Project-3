@@ -299,8 +299,8 @@ with st.sidebar:
         st.rerun()
     
     st.subheader("🔍 Search")
-    if st.button("Find 10 best action movies", use_container_width=True):
-        st.session_state.next_query = "Find 10 best action movies"
+    if st.button("Reccommend me 10 best action movies", use_container_width=True):
+        st.session_state.next_query = "Reccommend me 10 best action movies"
         st.rerun()
     
     st.subheader("🎯 Recommendations")
@@ -340,6 +340,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
