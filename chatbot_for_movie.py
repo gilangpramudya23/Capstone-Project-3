@@ -271,10 +271,11 @@ else:
 
 # Display header image if exists
 try:
-    st.image("./Capstone-Project-3/movie_pict.jpg")
+    image_url = "https://raw.githubusercontent.com/gilangpramudya23/Capstone-Project-3/main/movie_pict.jpg"
+    st.image(image_url, use_container_width=True)
 except:
     pass
-
+    
 import datetime
 
 hour = datetime.datetime.now().hour
@@ -396,6 +397,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
