@@ -359,7 +359,7 @@ with st.sidebar:
         st.rerun()
 
     if st.button("Find three movies released between 2010 and 2012"):
-        st.session_state.next_query = "Find three movies released between 2010 and 2012"
+        st.session_state.next_query = "Find three movies released between 2010 and 2020"
         st.rerun()
     
     st.subheader("🎯 Recommendations")
@@ -367,8 +367,8 @@ with st.sidebar:
         st.session_state.next_query = "Recommend movies like Inception"
         st.rerun()
 
-    if st.button("Top 5 action movies"):
-        st.session_state.next_query = "Top 5 action movies"
+    if st.button("Recommend movies featuring Robert Downey Jr."):
+        st.session_state.next_query = "Recommend movies featuring Robert Downey Jr."
         st.rerun()
     
     st.divider()
@@ -396,6 +396,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
