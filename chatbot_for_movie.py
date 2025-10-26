@@ -79,8 +79,6 @@ def compare_movies(movie_titles: str) -> str:
             metadata = doc.metadata
             comparisons.append(
                 f"{metadata.get('title', 'N/A')}: "
-                f"Rating {metadata.get('rating', 'N/A')}, "
-                f"Year {metadata.get('released_year', 'N/A')}, "
                 f"Genre {metadata.get('genre', 'N/A')}"
             )
     return "\n".join(comparisons)
@@ -377,6 +375,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
