@@ -42,7 +42,7 @@ def get_relevant_docs(question):
 @tool
 def search_movies(query: str) -> str:
     """Search for movies by title, actor, director, or keywords."""
-    results = qdrant.similarity_search(query, k=5)
+    results = qdrant.similarity_search(query, k=10)
     formatted = []
     for doc in results:
         metadata = doc.metadata
@@ -57,7 +57,7 @@ def search_movies(query: str) -> str:
 @tool
 def get_recommendations(movie_title: str) -> str:
     """Get movie recommendations similar to the given movie title."""
-    results = qdrant.similarity_search(movie_title, k=6)
+    results = qdrant.similarity_search(movie_title, k=10)
     recommendations = []
     for i, doc in enumerate(results[1:], 1):
         metadata = doc.metadata
@@ -78,7 +78,7 @@ def compare_movies(movie_titles: str):
     comparisons = []
     for title in titles:
         # Search for each movie individually
-        results = qdrant.similarity_search(title, k=1)
+        results = qdrant.similarity_search(title, k=10)
         if results:
             doc = results[0]
             metadata = doc.metadata
@@ -265,9 +265,9 @@ st.title("🎬 Looking for Something to Watch?")
 
 # Mode indicator
 if USE_SUPERVISOR:
-    st.caption("Grab your snacks, 4 Agents help you find the perfect pick!")
+    st.caption("Hey there, I’m your movie buddy here to help you find and explore all kinds of movies. Whether you’re into classics or the latest blockbusters, I’ve got recommendations just for you. Let’s talk movies like real fans do!")
 else:
-    st.caption("Grab your snacks, 4 Agents help you find the perfect pick!")
+    st.caption("Hey there, I’m your movie buddy here to help you find and explore all kinds of movies. Whether you’re into classics or the latest blockbusters, I’ve got recommendations just for you. Let’s talk movies like real fans do!")
 
 # Display header image if exists
 try:
@@ -299,8 +299,8 @@ for message in st.session_state.messages:
             st.caption(message["agent_info"])
 
 # Accept user input
-if prompt := st.chat_input("Ask me anything about films search, recommend, compare, or anything!"):
-    messages_history = st.session_state.get("messages", [])[-20:]
+if prompt := st.chat_input("Ask me anything about movies!"):
+    messages_history = st.session_state.get("messages", [])[-10:]
     
     # Display user message
     with st.chat_message("Human"):
@@ -397,6 +397,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
