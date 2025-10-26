@@ -194,7 +194,7 @@ if USE_SUPERVISOR:
         agents=[search_agent, recommendation_agent, comparison_agent],
         model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
         prompt="""You manage four movie specialists:
-        - search_agent: Finds movies by title/actor/director
+        - search_agent: Finds movies by title/actor/director or anything
         - recommendation_agent: Recommends similar movies
         - comparison_agent: Compares multiple movies
         
@@ -271,7 +271,7 @@ else:
 
 # Display header image if exists
 try:
-    st.image("./Recipe Master Agent/header_img.png")
+    st.image("./Capstone-Project-3/movie_pict.jpg")
 except:
     pass
 
@@ -396,6 +396,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
