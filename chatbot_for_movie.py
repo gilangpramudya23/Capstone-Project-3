@@ -101,7 +101,62 @@ def compare_movies(movie_titles: str) -> str:
     return "\n---\n".join(comparisons) if comparisons else "No movies found to compare."
 
 tools = [get_relevant_docs, search_movies, get_recommendations, compare_movies]
+    
+# SPECIALIST AGENTS
+
+# Search Agent
+search_agent = create_react_agent(
+    model="openai:gpt-4o-mini",
+    tools=tools,
+    prompt="You are a movie search specialist." \
+    "Your goal is to help users find the most relevant movies based on their questions." \
+    "Use the 'search_movies_tool' to search by title, actor, director, or descriptive keywords." \
+    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    name="search_agent"
+)
+
+# Recommendation Agent
+recommendation_agent = create_react_agent(
+    model="openai:gpt-4o-mini",
+    tools=tools,
+    prompt="You are a movie recommendation specialist." \
+    "Suggest movies similar to the one the user liked by analyzing genre, tone, themes, director style, or audience appeal. " \
+    "Use the 'recommend_movies_tool' to find up to 10 relevant movies and present them in a clear, ranked list with brief descriptions." \
+    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    name="recommendation_agent"
+)
+
+# Comparison Agent
+comparison_agent = create_react_agent(
+    model="openai:gpt-4o-mini",
+    tools=tools,
+    prompt="You are a movie comparison specialist. Compare multiple movies and highlight similarities and differences." \
+    "Use the 'compare_movies_tool' to analyze and compare two or more movies." \
+    "Present your findings in a structured summary or bullet list for easy understanding." \
+    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    name="comparison_agent"
+)
+
+# SUPERVISOR AGENT
+
+
+
 # MAIN FUNCTION
+
+if USE_SUPERVISOR:
+    supervisor = create_supervisor(
+    agents=[search_agent, recommendation_agent, comparison_agent],
+    model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
+    prompt="""You are the Supervisor Agent that manages four movie specialists.
+    Your goal is to correctly identify the user’s intent and route the query to the most suitable specialist agent.
+    Available agents:
+    - search_agent → Finds movies by title, actor, director, or keywords.
+    - recommendation_agent → Suggests similar movies based on user preferences or liked titles.
+    - comparison_agent → Compares two or more movies side by side.
+    
+    Route each question to the best specialist.
+    Your audiences are movie enthusiasts seeking accurate and relevant information."""
+).compile()
 
 def process_question(question, history):
     """Wrapper that uses supervisor if enabled, otherwise uses original chat_chef"""
@@ -158,57 +213,6 @@ def process_question(question, history):
         
         result = chat_chef(question, history, tools, prompt)
         return result
-    
-# SPECIALIST AGENTS
-
-# Search Agent
-search_agent = create_react_agent(
-    model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie search specialist." \
-    "Your goal is to help users find the most relevant movies based on their questions." \
-    "Use the 'search_movies_tool' to search by title, actor, director, or descriptive keywords." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
-    name="search_agent"
-)
-
-# Recommendation Agent
-recommendation_agent = create_react_agent(
-    model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie recommendation specialist." \
-    "Suggest movies similar to the one the user liked by analyzing genre, tone, themes, director style, or audience appeal. " \
-    "Use the 'recommend_movies_tool' to find up to 10 relevant movies and present them in a clear, ranked list with brief descriptions." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
-    name="recommendation_agent"
-)
-
-# Comparison Agent
-comparison_agent = create_react_agent(
-    model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie comparison specialist. Compare multiple movies and highlight similarities and differences." \
-    "Use the 'compare_movies_tool' to analyze and compare two or more movies." \
-    "Present your findings in a structured summary or bullet list for easy understanding." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
-    name="comparison_agent"
-)
-
-# SUPERVISOR AGENT
-
-supervisor = create_supervisor(
-    agents=[search_agent, recommendation_agent, comparison_agent],
-    model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
-    prompt="""You are the Supervisor Agent that manages four movie specialists.
-    Your goal is to correctly identify the user’s intent and route the query to the most suitable specialist agent.
-    Available agents:
-    - search_agent → Finds movies by title, actor, director, or keywords.
-    - recommendation_agent → Suggests similar movies based on user preferences or liked titles.
-    - comparison_agent → Compares two or more movies side by side.
-    
-    Route each question to the best specialist.
-    Your audiences are movie enthusiasts seeking accurate and relevant information."""
-).compile()
 
 # STREAMLIT APP
 
@@ -347,6 +351,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
