@@ -254,7 +254,7 @@ if prompt := st.chat_input("Ask me about movies!"):
     
     with st.chat_message("AI"):
         with st.spinner("Processing with specialist agents..."):
-            response = chat_movie(prompt, messages_history)
+            response = process_question(prompt, messages_history)
             answer = response["answer"]
             agents_used = response.get('agents_used', [])
             
@@ -293,7 +293,7 @@ with st.sidebar:
         messages_history = st.session_state.get("messages", [])[-20:]
         st.session_state.messages.append({"role": "Human", "content": query_text})
 
-        response = chat_movie(query_text, messages_history)
+        response = process_question(query_text, messages_history)
         agents_used = response.get('agents_used', [])
         agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
 
@@ -336,7 +336,7 @@ if "next_query" in st.session_state:
     messages_history = st.session_state.get("messages", [])[-20:]
     st.session_state.messages.append({"role": "Human", "content": query})
     
-    response = chat_movie(query, messages_history)
+    response = process_question(query, messages_history)
     agents_used = response.get('agents_used', [])
     agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
     
@@ -347,6 +347,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
