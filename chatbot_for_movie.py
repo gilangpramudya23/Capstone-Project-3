@@ -34,7 +34,13 @@ qdrant = QdrantVectorStore.from_existing_collection(
 # TOOLS
 
 @tool
-def search_movies_tool(question):
+def get_relevant_docs(question):
+    """Use this tool to get relevant documents about movies."""
+    results = qdrant.similarity_search(question, k=10)
+    return results
+
+@tool
+def search_movies(query: str) -> str:
     """Use this tool to find the most relevant movies based on a user's query.
     You can search by Movie title, Actor, and Director.
     Return movies that best match the user's intent, even if the query is phrased naturally."""
@@ -55,7 +61,7 @@ def search_movies_tool(question):
     return "\n".join(formatted) if formatted else "No movies found."
 
 @tool
-def recommend_movies_tool(question):
+def get_recommendations(movie_title: str) -> str:
     """Use this tool to get movie recommendations based on a movie the user likes.
     The input can be a movie title or a short description of the type of movie they liked."""
     results = qdrant.similarity_search(question, k=10)
@@ -73,7 +79,7 @@ def recommend_movies_tool(question):
     return "\n".join(recommendations) if recommendations else "No recommendations found."
 
 @tool
-def compare_movies_tool(question):
+def compare_movies(movie_titles: str) -> str:
     """Use this tool to compare multiple movies side by side.
     Focus on similarities and differences.
     Return a concise comparison summary or table-style result if needed."""
@@ -96,61 +102,61 @@ def compare_movies_tool(question):
 
 # MAIN FUNCTION
 
-def chat_movie(question, history):
-    # Build messages history
-    messages = []
-    for msg in history:
-        if msg["role"] == "Human":
-            messages.append({"role": "user", "content": msg["content"]})
-        elif msg["role"] == "AI":
-            messages.append({"role": "assistant", "content": msg["content"]})
-    messages.append({"role": "user", "content": question})
+def process_question(question, history):
+    """Wrapper that uses supervisor if enabled, otherwise uses original chat_chef"""
     
-    # Process with supervisor
-    result_messages = []
-    agents_used = []
+    if USE_SUPERVISOR:
+        # Use supervisor mode
+        messages = []
+        for msg in history:
+            role = "user" if msg["role"] == "Human" else "assistant"
+            messages.append({"role": role, "content": msg["content"]})
+        messages.append({"role": "user", "content": question})
+        
+        full_response = ""
+        agents_used = []
+        total_input_tokens = 0
+        total_output_tokens = 0
+        tool_messages = []
+        
+        for chunk in supervisor.stream({"messages": messages}, stream_mode="values"):
+            if "messages" in chunk:
+                last_message = chunk["messages"][-1]
+                
+                if hasattr(last_message, 'name') and last_message.name:
+                    if last_message.name not in agents_used:
+                        agents_used.append(last_message.name)
+                
+                if hasattr(last_message, 'content'):
+                    full_response = last_message.content
+                
+                if hasattr(last_message, 'response_metadata'):
+                    metadata = last_message.response_metadata
+                    if "usage_metadata" in metadata:
+                        total_input_tokens += metadata["usage_metadata"].get("input_tokens", 0)
+                        total_output_tokens += metadata["usage_metadata"].get("output_tokens", 0)
+                
+                if isinstance(last_message, ToolMessage):
+                    tool_messages.append(last_message.content)
+        
+        price = 17_000 * (total_input_tokens * 0.15 + total_output_tokens * 0.6) / 1_000_000
+        
+        return {
+            "answer": full_response,
+            "price": price,
+            "total_input_tokens": total_input_tokens,
+            "total_output_tokens": total_output_tokens,
+            "tool_messages": tool_messages,
+            "agents_used": agents_used
+        }
     
-    for chunk in supervisor.stream({"messages": messages}, stream_mode="values"):
-        if "messages" in chunk:
-            result_messages = chunk["messages"]
-            last_message = chunk["messages"][-1]
-            
-            if hasattr(last_message, 'name') and last_message.name:
-                if last_message.name not in agents_used:
-                    agents_used.append(last_message.name)
-    
-    answer = result_messages[-1].content
-    result = {"messages": result_messages}
-    
-    # Calculate tokens and price
-    total_input_tokens = 0
-    total_output_tokens = 0
-
-    for message in result["messages"]:
-        if "usage_metadata" in message.response_metadata:
-            total_input_tokens += message.response_metadata["usage_metadata"]["input_tokens"]
-            total_output_tokens += message.response_metadata["usage_metadata"]["output_tokens"]
-        elif "token_usage" in message.response_metadata:
-            total_input_tokens += message.response_metadata["token_usage"].get("prompt_tokens", 0)
-            total_output_tokens += message.response_metadata["token_usage"].get("completion_tokens", 0)
-
-    price = 17_000*(total_input_tokens*0.15 + total_output_tokens*0.6)/1_000_000
-
-    # Extract tool messages
-    tool_messages = []
-    for message in result["messages"]:
-        if isinstance(message, ToolMessage):
-            tool_messages.append(str(message.content))
-
-    response = {
-        "answer": answer,
-        "price": price,
-        "total_input_tokens": total_input_tokens,
-        "total_output_tokens": total_output_tokens,
-        "tool_messages": tool_messages,
-        "agents_used": agents_used
-    }
-    return response
+    else:
+        # Use original chat_chef function (single agent mode)
+        tools = [get_relevant_docs]
+        prompt = "You are a master of any movies. Answer only questions about movies and use given tools for movie details."
+        
+        result = chat_chef(question, history, tools, prompt)
+        return result
     
 tools = [search_movies_tool, recommend_movies_tool, compare_movies_tool]
 # SPECIALIST AGENTS
@@ -341,6 +347,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
