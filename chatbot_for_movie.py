@@ -73,34 +73,6 @@ def recommend_movies_tool(question):
     return "\n".join(recommendations) if recommendations else "No recommendations found."
 
 @tool
-def statistics_tool(question):
-    """Use this tool to get top rated movies, best movies by genre, or year analysis.
-    Return a ranked list or a brief analysis summary based on the query."""
-    results = qdrant.similarity_search(question, k=50)
-
-    # Fallback: if no results, get a broader set
-    if not results:
-        results = qdrant.similarity_search("movie", k=100)
-
-    # Sort by rating
-    sorted_results = sorted(
-        results,
-        key=lambda x: float(x.metadata.get('rating', 0) or 0),
-        reverse=True
-    )
-
-    stats = []
-    for i, doc in enumerate(sorted_results[:10], 1):
-        metadata = doc.metadata
-        stats.append(
-            f"{i}. **{metadata.get('title', 'N/A')}** ({metadata.get('released_year', 'N/A')})\n"
-            f"   - Rating: {metadata.get('rating', 'N/A')}/10\n"
-            f"   - Genre: {metadata.get('genre', 'N/A')}\n"
-            f"   - Metascore: {metadata.get('meta_score', 'N/A')}\n"
-        )
-    return "\n".join(stats) if stats else "No statistics available."
-
-@tool
 def compare_movies_tool(question):
     """Use this tool to compare multiple movies side by side.
     Focus on similarities and differences.
@@ -204,16 +176,6 @@ recommendation_agent = create_react_agent(
     name="recommendation_agent"
 )
 
-# Statistics Agent
-statistics_agent = create_react_agent(
-    model="openai:gpt-4o-mini",
-    tools=[statistics_tool],
-    prompt="You are a movie statistics specialist. Provide top-rated movies, best by genre, or year analysis." \
-    "Provide results as a ranked list or short summary, including relevant metrics like ratings or year." \
-    "Be informative, friendly, and insightful. Avoid opinions or speculation.",
-    name="statistics_agent"
-)
-
 # Comparison Agent
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
@@ -228,14 +190,13 @@ comparison_agent = create_react_agent(
 # SUPERVISOR AGENT
 
 supervisor = create_supervisor(
-    agents=[search_agent, recommendation_agent, statistics_agent, comparison_agent],
+    agents=[search_agent, recommendation_agent, comparison_agent],
     model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
     prompt="""You are the Supervisor Agent that manages four movie specialists.
     Your goal is to correctly identify the user’s intent and route the query to the most suitable specialist agent.
     Available agents:
     - search_agent → Finds movies by title, actor, director, or keywords.
     - recommendation_agent → Suggests similar movies based on user preferences or liked titles.
-    - statistics_agent → Provides top-rated movies, best-by-genre lists, or year-based analysis.
     - comparison_agent → Compares two or more movies side by side.
     
     Route each question to the best specialist.
@@ -338,23 +299,13 @@ with st.sidebar:
         st.rerun()
     
     st.subheader("🔍 Search")
-    if st.button("Find Nolan films", use_container_width=True):
-        st.session_state.next_query = "Find movies directed by Christopher Nolan"
+    if st.button("Find 10 best action movies", use_container_width=True):
+        st.session_state.next_query = "Find 10 best action movies"
         st.rerun()
     
     st.subheader("🎯 Recommendations")
     if st.button("Movies like Inception", use_container_width=True):
         st.session_state.next_query = "Recommend movies like Inception"
-        st.rerun()
-    
-    st.subheader("📊 Statistics")
-    if st.button("Top 10 rated", use_container_width=True):
-        st.session_state.next_query = "What are the top 10 highest rated movies?"
-        st.rerun()
-    
-    st.subheader("⚖️ Compare")
-    if st.button("Compare movie 1 & 2", use_container_width=True):
-        st.session_state.next_query = "Compare Movie 1 and Movie 2"
         st.rerun()
     
     st.divider()
@@ -389,5 +340,6 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
