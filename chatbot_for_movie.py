@@ -151,13 +151,14 @@ def chat_movie(question, history):
         "agents_used": agents_used
     }
     return response
-
+    
+tools = [search_movies_tool, recommend_movies_tool, compare_movies_tool]
 # SPECIALIST AGENTS
 
 # Search Agent
 search_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[search_movies_tool],
+    tools=tools,
     prompt="You are a movie search specialist." \
     "Your goal is to help users find the most relevant movies based on their questions." \
     "Use the 'search_movies_tool' to search by title, actor, director, or descriptive keywords." \
@@ -168,7 +169,7 @@ search_agent = create_react_agent(
 # Recommendation Agent
 recommendation_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[recommend_movies_tool],
+    tools=tools,
     prompt="You are a movie recommendation specialist." \
     "Suggest movies similar to the one the user liked by analyzing genre, tone, themes, director style, or audience appeal. " \
     "Use the 'recommend_movies_tool' to find up to 10 relevant movies and present them in a clear, ranked list with brief descriptions." \
@@ -179,7 +180,7 @@ recommendation_agent = create_react_agent(
 # Comparison Agent
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[compare_movies_tool],
+    tools=tools,
     prompt="You are a movie comparison specialist. Compare multiple movies and highlight similarities and differences." \
     "Use the 'compare_movies_tool' to analyze and compare two or more movies." \
     "Present your findings in a structured summary or bullet list for easy understanding." \
@@ -340,6 +341,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
