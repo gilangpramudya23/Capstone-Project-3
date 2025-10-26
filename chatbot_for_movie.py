@@ -336,12 +336,12 @@ with st.sidebar:
         st.session_state.next_query = "Find movies directed by David Fincher"
         st.rerun()
 
-    if st.button("List 3 action movies"):
-        st.session_state.next_query = "List 3 action movies"
-        st.rerun()
-
     if st.button("Find three movies released between 2010 and 2012"):
         st.session_state.next_query = "Find three movies released between 2010 and 2012"
+        st.rerun()
+
+    if st.button("Find three movies with ratings between 8 and 10."):
+        st.session_state.next_query = "Find three movies with ratings between 8 and 10."
         st.rerun()
     
     st.subheader("🎯 Recommendations")
@@ -351,6 +351,10 @@ with st.sidebar:
 
     if st.button("Top 5 action movies"):
         st.session_state.next_query = "Top 5 action movies"
+        st.rerun()
+
+    if st.button("Top 5 highest-rated action movies"):
+        st.session_state.next_query = "Top 5 highest-rated action movies"
         st.rerun()
     
     st.subheader("⚖️ Compare")
@@ -383,6 +387,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
