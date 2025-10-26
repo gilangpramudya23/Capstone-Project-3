@@ -68,61 +68,6 @@ def get_recommendations(movie_title: str) -> str:
     return "\n".join(recommendations)
 
 @tool
-def statistics_tool(IMDB_Rating: str) -> str:
-    """Use this tool to get top-rated movies, best movies by genre, or year analysis.
-    It detects genre and rating conditions automatically and returns ranked results."""
-    
-    question_lower = question.lower()
-    genre_detected = None
-    genres = [
-        "action", "drama", "comedy", "thriller", "romance",
-        "horror", "sci-fi", "adventure", "animation", "crime"
-    ]
-    for g in genres:
-        if g in question_lower:
-            genre_detected = g.title()
-            break
-
-    # Run the base similarity search with a wider range
-    results = qdrant.similarity_search(question, k=10)
-    if not results:
-        return "No movies found for your query."
-
-    # Filter by detected genre
-    if genre_detected:
-        results = [r for r in results if genre_detected in str(r.metadata.get("genre", ""))]
-
-    # Sort results by rating
-    sorted_results = sorted(
-        results,
-        key=lambda x: float(x.metadata.get("rating", 0) or 0),
-        reverse=True
-    )
-
-    # Take the top 10
-    top_movies = sorted_results[:10]
-
-    if not top_movies:
-        return f"No {genre_detected or ''} movies found with sufficient rating."
-
-    # Format the output neatly
-    formatted = []
-    for i, doc in enumerate(top_movies, 1):
-        m = doc.metadata
-        formatted.append(
-            f"{i}. **{m.get('title', 'N/A')}** ({m.get('released_year', 'N/A')})\n"
-            f"   - Rating: {m.get('rating', 'N/A')}/10\n"
-            f"   - Genre: {m.get('genre', 'N/A')}\n"
-            f"   - Director: {m.get('director', 'N/A')}\n"
-            f"   - Stars: {m.get('star1', 'N/A')}, {m.get('star2', 'N/A')}\n"
-        )
-
-    return (
-        f"🎬 **Top 10 Rated {genre_detected or 'Movies'}:**\n\n"
-        + "\n".join(formatted)
-    )
-
-@tool
 def compare_movies(movie_titles: str) -> str:
     """Compare multiple movies. Input should be comma-separated titles."""
     titles = [t.strip() for t in movie_titles.split(',')]
@@ -211,14 +156,6 @@ recommendation_agent = create_react_agent(
     name="recommendation_agent"
 )
 
-# Statistics Agent
-statistics_agent = create_react_agent(
-    model="openai:gpt-4o-mini",
-    tools=[statistics_tool],
-    prompt="You are a movie statistics specialist. Provide top-rated movies and analyze trends.",
-    name="statistics_agent"
-)
-
 # Comparison Agent - uses your chat_chef function
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
@@ -230,11 +167,10 @@ comparison_agent = create_react_agent(
 # SUPERVISOR
 
 # Initialize supervisor
-USE_SUPERVISOR = st.sidebar.checkbox("🤖 Enable Supervisor Mode", value=True)
 
 if USE_SUPERVISOR:
     supervisor = create_supervisor(
-        agents=[search_agent, recommendation_agent, statistics_agent, comparison_agent],
+        agents=[search_agent, recommendation_agent, comparison_agent],
         model=ChatOpenAI(model="gpt-4o-mini", api_key=OPENAI_API_KEY),
         prompt="""You manage four movie specialists:
         - search_agent: Finds movies by title/actor/director
@@ -302,6 +238,8 @@ def process_question(question, history):
         return result
 
 # STREAMLIT APP
+
+USE_SUPERVISOR = st.sidebar.checkbox("🤖 Enable Supervisor Mode", value=True)
 
 st.title("🎬 Looking for Something to Watch?")
 
@@ -404,8 +342,7 @@ with st.sidebar:
     if st.button("Recommend movies like Inception"):
         st.session_state.next_query = "Recommend movies like Inception"
         st.rerun()
-    
-    st.subheader("📊 Rated Movie")
+
     if st.button("Top 5 rated action movies"):
         st.session_state.next_query = "Top 5 rated action movies"
         st.rerun()
@@ -440,4 +377,5 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
