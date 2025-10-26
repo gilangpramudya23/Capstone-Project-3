@@ -317,6 +317,22 @@ if prompt := st.chat_input("Ask me about movies!"):
 # Sidebar examples
 with st.sidebar:
     st.header("💡 Example Queries")
+
+    def send_query_to_chat(query_text):
+        messages_history = st.session_state.get("messages", [])[-20:]
+        st.session_state.messages.append({"role": "Human", "content": query_text})
+
+        response = chat_movie(query_text, messages_history)
+        agents_used = response.get('agents_used', [])
+        agent_info = f"🤖 Handled by: **{', '.join(agents_used)}**"
+
+        st.session_state.messages.append({
+            "role": "AI",
+            "content": response["answer"],
+            "agent_info": agent_info
+        })
+
+        st.rerun()
     
     st.subheader("🔍 Search")
     if st.button("Find Nolan films", use_container_width=True):
@@ -370,3 +386,4 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
