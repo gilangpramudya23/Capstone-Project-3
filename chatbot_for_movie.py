@@ -173,7 +173,7 @@ recommendation_agent = create_react_agent(
 # Comparison Agent
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[compare_movies],
+    tools=tools,
     prompt="""You are a movie comparison specialist. When users ask to compare movies:
     
     1. Extract the movie titles they want to compare
@@ -351,7 +351,7 @@ if prompt := st.chat_input("Ask me anything about films search, recommend, compa
 
 # Sidebar
 with st.sidebar:
-    st.header("💡 Example Queries")
+    st.header("💡 Example Questions")
     
     st.subheader("🔍 Search")
     if st.button("Find movies directed by David Fincher"):
@@ -361,10 +361,6 @@ with st.sidebar:
     if st.button("Find three movies released between 2010 and 2012"):
         st.session_state.next_query = "Find three movies released between 2010 and 2012"
         st.rerun()
-
-    if st.button("Find three movies with ratings between 8 and 10."):
-        st.session_state.next_query = "Find three movies with ratings between 8 and 10."
-        st.rerun()
     
     st.subheader("🎯 Recommendations")
     if st.button("Recommend movies like Inception"):
@@ -373,15 +369,6 @@ with st.sidebar:
 
     if st.button("Top 5 action movies"):
         st.session_state.next_query = "Top 5 action movies"
-        st.rerun()
-
-    if st.button("Top 5 highest-rated action movies"):
-        st.session_state.next_query = "Top 5 highest-rated action movies"
-        st.rerun()
-    
-    st.subheader("⚖️ Compare")
-    if st.button("Compare Godfather 1 & 2"):
-        st.session_state.next_query = "Compare The Godfather and The Godfather Part II"
         st.rerun()
     
     st.divider()
@@ -409,6 +396,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
