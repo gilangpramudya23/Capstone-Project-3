@@ -138,12 +138,13 @@ def chat_movie(question, history, tools_list, agent_prompt):
     }
     return response
 
-# SPECIALIST AGENTS (From chat_movie function!)
+# SPECIALIST AGENTS
+tools = [search_movies, get_relevant_docs, get_recommendations, compare_movies]
 
 # Search Agent
 search_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[search_movies, get_relevant_docs],
+    tools=tools,
     prompt="You are a movie search specialist. Find movies by title, actor, director, or keywords. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="search_agent"
 )
@@ -151,7 +152,7 @@ search_agent = create_react_agent(
 # Recommendation Agent
 recommendation_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[get_recommendations],
+    tools=tools,
     prompt="You are a movie recommendation specialist. Suggest similar movies and explain why. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="recommendation_agent"
 )
@@ -159,7 +160,7 @@ recommendation_agent = create_react_agent(
 # Comparison Agent - uses your chat_chef function
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=[compare_movies],
+    tools=tools,
     prompt="You are a movie comparison specialist. Compare movies side-by-side. Be informative, friendly, and insightful. Avoid opinions or speculation.",
     name="comparison_agent"
 )
@@ -375,6 +376,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
