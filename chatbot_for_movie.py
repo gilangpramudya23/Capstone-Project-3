@@ -100,7 +100,7 @@ def compare_movies(movie_titles: str) -> str:
         )
     return "\n---\n".join(comparisons) if comparisons else "No movies found to compare."
 
-tools = [get_relevant_docs, search_movies, get_recommendations, ompare_movies]
+tools = [get_relevant_docs, search_movies, get_recommendations, compare_movies]
 # MAIN FUNCTION
 
 def process_question(question, history):
@@ -347,6 +347,7 @@ if "next_query" in st.session_state:
     })
 
     st.rerun()
+
 
 
 
