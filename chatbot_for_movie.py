@@ -341,8 +341,8 @@ with st.sidebar:
         st.session_state.next_query = "Recommend movies like Inception"
         st.rerun()
 
-    if st.button("Top 5 rated action movies"):
-        st.session_state.next_query = "Top 5 rated action movies"
+    if st.button("Top 5 action movies"):
+        st.session_state.next_query = "Top 5 action movies"
         st.rerun()
     
     st.subheader("⚖️ Compare")
@@ -375,6 +375,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
