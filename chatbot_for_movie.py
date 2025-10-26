@@ -68,20 +68,35 @@ def get_recommendations(movie_title: str) -> str:
     return "\n".join(recommendations)
 
 @tool
-def compare_movies(movie_titles: str) -> str:
-    """Compare multiple movies. Input should be comma-separated titles."""
+def compare_movies(movie_titles: str):
+    """Use this tool to compare multiple movies side by side. 
+    Input should be comma-separated movie titles like 'The Godfather, The Godfather Part II'."""
+    
+    # Split the titles
     titles = [t.strip() for t in movie_titles.split(',')]
+    
     comparisons = []
     for title in titles:
+        # Search for each movie individually
         results = qdrant.similarity_search(title, k=1)
         if results:
             doc = results[0]
             metadata = doc.metadata
             comparisons.append(
-                f"{metadata.get('title', 'N/A')}: "
-                f"Genre {metadata.get('genre', 'N/A')}"
+                f"**{metadata.get('title', 'N/A')}** ({metadata.get('released_year', 'N/A')})\n"
+                f"  - Rating: {metadata.get('rating', 'N/A')}/10\n"
+                f"  - Metascore: {metadata.get('meta_score', 'N/A')}\n"
+                f"  - Genre: {metadata.get('genre', 'N/A')}\n"
+                f"  - Director: {metadata.get('director', 'N/A')}\n"
+                f"  - Stars: {metadata.get('star1', 'N/A')}, {metadata.get('star2', 'N/A')}, {metadata.get('star3', 'N/A')}\n"
+                f"  - Runtime: {metadata.get('duration', 'N/A')}\n"
+                f"  - Certificate: {metadata.get('certificate', 'N/A')}\n"
+                f"  - Votes: {metadata.get('no_of_votes', 'N/A')}\n"
+                f"  - Gross: ${metadata.get('gross', 'N/A')}\n"
+                f"  - Overview: {metadata.get('overview', 'N/A')[:150]}...\n"
             )
-    return "\n".join(comparisons)
+    
+    return "\n" + "="*50 + "\n\n".join(comparisons) if comparisons else "No movies found to compare."
 
 # chat_movie FUNCTION
 
@@ -155,14 +170,21 @@ recommendation_agent = create_react_agent(
     name="recommendation_agent"
 )
 
-# Comparison Agent - uses your chat_chef function
+# Comparison Agent
 comparison_agent = create_react_agent(
     model="openai:gpt-4o-mini",
-    tools=tools,
-    prompt="You are a movie comparison specialist. Compare movies side-by-side. Be informative, friendly, and insightful. Avoid opinions or speculation.",
+    tools=[compare_movies],
+    prompt="""You are a movie comparison specialist. When users ask to compare movies:
+    
+    1. Extract the movie titles they want to compare
+    2. Use the compare_movies_tool with comma-separated titles (e.g., "The Godfather, The Godfather Part II")
+    3. Present the comparison data in a clear, structured format
+    4. Highlight KEY DIFFERENCES and SIMILARITIES between the movies
+    5. Include insights about ratings, box office, critical reception
+    
+    Be detailed, informative, and help users understand the differences and similarities clearly.""",
     name="comparison_agent"
 )
-
 # SUPERVISOR
 
 # Initialize supervisor
@@ -387,6 +409,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
