@@ -253,7 +253,7 @@ def process_question(question, history):
     
     else:
         tools = [get_relevant_docs]
-        prompt = "You are a movie domain expert with deep knowledge of films, directors, actors, genres, and industry trends. Respond to questions related to movies. "
+        prompt = "You are a movie domain expert with deep knowledge of films, directors, actors, genres, and industry trends. Respond to questions related to movies. Your audiences mostly movie enthusiast"
         
         result = chat_movie(question, history, tools, prompt)
         result["agents_used"] = ["single_agent"]
@@ -352,14 +352,14 @@ if prompt := st.chat_input("Ask me anything about movies!"):
 
 # Sidebar
 with st.sidebar:
-    st.header("💡 Example Questions")
+    st.header("💡 Question Ideas")
     
     st.subheader("🔍 Search")
     if st.button("Find movies directed by David Fincher"):
         st.session_state.next_query = "Find movies directed by David Fincher"
         st.rerun()
 
-    if st.button("Find three movies released between 2010 and 2012"):
+    if st.button("Find three movies released between 2010 and 2020"):
         st.session_state.next_query = "Find three movies released between 2010 and 2020"
         st.rerun()
     
@@ -397,6 +397,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
