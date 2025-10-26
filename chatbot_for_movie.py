@@ -47,10 +47,10 @@ def search_movies(query: str) -> str:
     for doc in results:
         metadata = doc.metadata
         formatted.append(
-            f"**{metadata.get('Series_Title', 'N/A')}** ({metadata.get('Released_Year', 'N/A')})\n"
-            f"Rating: {metadata.get('IMDB_Rating', 'N/A')}/10 | Genre: {metadata.get('Genre', 'N/A')}\n"
-            f"Director: {metadata.get('Director', 'N/A')}\n"
-            f"Stars: {metadata.get('Star1', 'N/A')}, {metadata.get('Star2', 'N/A')}\n"
+            f"**{metadata.get('title', 'N/A')}** ({metadata.get('released_year', 'N/A')})\n"
+            f"Rating: {metadata.get('rating', 'N/A')}/10 | Genre: {metadata.get('genre', 'N/A')}\n"
+            f"Director: {metadata.get('director', 'N/A')}\n"
+            f"Stars: {metadata.get('star1', 'N/A')}, {metadata.get('star2', 'N/A')}\n"
         )
     return "\n---\n".join(formatted)
 
@@ -62,8 +62,8 @@ def get_recommendations(movie_title: str) -> str:
     for i, doc in enumerate(results[1:], 1):
         metadata = doc.metadata
         recommendations.append(
-            f"{i}. {metadata.get('Series_Title', 'N/A')} ({metadata.get('Released_Year', 'N/A')}) - "
-            f"Rating: {metadata.get('IMDB_Rating', 'N/A')}/10"
+            f"{i}. {metadata.get('title', 'N/A')} ({metadata.get('released_year', 'N/A')}) - "
+            f"Rating: {metadata.get('rating', 'N/A')}/10"
         )
     return "\n".join(recommendations)
 
@@ -78,10 +78,10 @@ def compare_movies(movie_titles: str) -> str:
             doc = results[0]
             metadata = doc.metadata
             comparisons.append(
-                f"{metadata.get('Series_Title', 'N/A')}: "
-                f"Rating {metadata.get('IMDB_Rating', 'N/A')}, "
-                f"Year {metadata.get('Released_Year', 'N/A')}, "
-                f"Genre {metadata.get('Genre', 'N/A')}"
+                f"{metadata.get('title', 'N/A')}: "
+                f"Rating {metadata.get('rating', 'N/A')}, "
+                f"Year {metadata.get('released_year', 'N/A')}, "
+                f"Genre {metadata.get('genre', 'N/A')}"
             )
     return "\n".join(comparisons)
 
@@ -178,7 +178,8 @@ if USE_SUPERVISOR:
         - recommendation_agent: Recommends similar movies
         - comparison_agent: Compares multiple movies
         
-        Route queries to the most appropriate specialist."""
+        Route queries to the most appropriate specialist.
+        Show the answer result to user."""
     ).compile()
 
 # WRAPPER FUNCTION
@@ -376,6 +377,7 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
 
 
 
