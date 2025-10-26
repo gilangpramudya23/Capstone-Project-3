@@ -307,9 +307,9 @@ st.title("🎬 Looking for Something to Watch?")
 
 # Mode indicator
 if USE_SUPERVISOR:
-    st.caption("🤖 Running in **Supervisor Mode** with 4 specialist agents")
+    st.caption("Grab your snacks, 4 Agents help you find the perfect pick!")
 else:
-    st.caption("Grab your snacks, I’ll help you find the perfect pick!")
+    st.caption("Grab your snacks, 4 Agents help you find the perfect pick!")
 
 # Display header image if exists
 try:
@@ -317,6 +317,17 @@ try:
 except:
     pass
 
+import datetime
+
+hour = datetime.datetime.now().hour
+if hour < 12:
+    greeting = "Good morning"
+elif hour < 18:
+    greeting = "Good afternoon"
+else:
+    greeting = "Good evening"
+
+st.subheader(f"{greeting}! How can I help you find your next great movie?")
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -329,7 +340,7 @@ for message in st.session_state.messages:
             st.caption(message["agent_info"])
 
 # Accept user input
-if prompt := st.chat_input("Ask me movies question"):
+if prompt := st.chat_input("Ask me anything about films search, recommend, compare, or anything!"):
     messages_history = st.session_state.get("messages", [])[-20:]
     
     # Display user message
@@ -385,18 +396,18 @@ with st.sidebar:
     st.header("💡 Example Queries")
     
     st.subheader("🔍 Search")
-    if st.button("Find Nolan films"):
-        st.session_state.next_query = "Find movies directed by Christopher Nolan"
+    if st.button("Find movies directed by David Fincher"):
+        st.session_state.next_query = "Find movies directed by David Fincher"
         st.rerun()
     
     st.subheader("🎯 Recommendations")
-    if st.button("Movies like Inception"):
+    if st.button("Recommend movies like Inception"):
         st.session_state.next_query = "Recommend movies like Inception"
         st.rerun()
     
     st.subheader("📊 Rated Movie")
-    if st.button("Top 10 rated action movies"):
-        st.session_state.next_query = "Top 10 rated action movies"
+    if st.button("Top 5 rated action movies"):
+        st.session_state.next_query = "Top 5 rated action movies"
         st.rerun()
     
     st.subheader("⚖️ Compare")
@@ -429,3 +440,4 @@ if "next_query" in st.session_state:
         "agent_info": agent_info
     })
     st.rerun()
+
